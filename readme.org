@@ -16,7 +16,7 @@ After testing few ideas with Yasnippet, I decided I need something different, an
 specification for a template engine, however, I just borrowed the markup idea and some very basics: {{ }}. There is an implementation of Mustach for Emacs as well, in
 web-mode, but I wanted something still simpler :-).
 
-Mustach is well designed API and great idea, but it is developed for a different use-case. My use-case is specifically to write some code and file generators with Emacs,
+Mustache is well designed API and great idea, but it is developed for a different use-case. My use-case is specifically to write some code and file generators with Emacs,
 and Elisp is relatively easy to sort of "export" and embed for that case. I just wanted a way to replace few variables with some values in README files, or in some code
 templates, so I opted for more KISS solution. Basically, Lite templates are just placeholders for Emacs Lisp in any text file. The library will ignore all the text in the
 file, and replace text between a pair of {{ }} (or your choice of delimiters) with results of evaluating that text as a Lisp expression(s). That let us have a markup with
@@ -31,13 +31,13 @@ install with package-vc-install and require in your Emacs before the usage.
 
 * Quick Intro
 
-As an intro into the idea itselsf, let's say we would like to print some value of an Emacs variable in a buffer, for example your user name:
+As an intro to the idea itself, let's say we would like to print some value of an Emacs variable in a buffer, for example your user name:
 
 Hello {{ user-login-name }}!
 
 If we evaluate the above template it will print: Hello arthur! (in my case) and it will be inserted into the buffer in which the template was invoked.
 
-Leading and trailing spaces around the code will be trimmed out. I found it a bit dense-looking to write {{user-login-name}}, I like it a bit more
+Leading and trailing spaces around the code will be trimmed out. I found it a bit dense-looking to write {{(some-function)}}, I like it a bit more
 fluffy with spaces around, so I made it slightly more flexible in that regard. It is possible to execute any number of Lisp expressions in markup. Say you have a
 variable named "greet" pointing to a string:
 
@@ -69,10 +69,11 @@ function in the markup.
 
 The purpose of this library is to provide an easy to use template syntax to write some file generators. Unlike Yasnippet which focuses on interactive use, Lite focus on
 prgrammatical use. Compared to a built-in template language in Emacs, Skeleton, Lite is much simpler. Lite basically has no syntax at all, it just lets you include any
-Emacs Lisp in your texts. You will typically write some template file, and than use that template to programmatically generate a target file. At least that is the
-intention. The workhorse function is lite-expand-region, which will expand all templates found in a region, in top to bottom, left to right fashion, as they are
-encountered. Eventuall errors are logged to a separate buffer. This not to stop entire processing if a single template fails for whatever reason. This might not be
-desired behaviour, so you can disable it by setting lite-stop-on-errors to nil.
+Emacs Lisp in your texts. You will typically write some template with some Lisp variables and expressions in placeholders, and than use that template to programmatically
+generate a target file with those Lisp expressions replaced by the result of evaluation. At least that is the intention.
+
+The workhorse function is lite-expand-region, which will expand all templates found in a region, in top to bottom, left to right fashion, as they are
+encountered.
 
 For testing and debugging pruposes there is also an interactive function in DWIM-style which you can use to expand template manually:
 
@@ -83,6 +84,10 @@ mark a region, it will expand all templates in a region, and if you just put it 
 somewhat long description, it really is simple in the practice.
 
 The templates are "killed" and not deleted, so they are in the undo history which is very useful while testing.
+
+Errors are not handled gracefully at the moment, but the plan is to log all eventuall errors and not printed results to a separate buffer. This not to stop entire
+processing if a single template fails for whatever reason. This might not be desired behaviour, so you can disable it by setting lite-stop-on-errors to nil. It is not
+implemented yet though.
 
 * Customization
 
