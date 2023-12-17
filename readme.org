@@ -108,7 +108,7 @@ not "returned", you will have to "insert" or use some of print functions to inse
 The syntax is very simple, basically write your files as you want them rendered and just enclose Lisp variables and expressions you want evaluated in a pair of {{ }}. It
 is possible to change delimiters as discussed elsewhere, so use it at your discretion.
 
-When it comes to storing the templates into files, it is meant to have two options, but currently only one is implemented. I do plan to make it possible to put several
+When it comes to storing the templates in files, it is meant to have two options, but currently only one is implemented. I do plan to make it possible to put several
 templates into a single file, and use that file as a library. For example if I have several different C++ files you would like to generate, I would like to have them in
 one and same "library", where each file content will be delimited by a separator. I have just not yet implemented that one. It is not very difficult to implement, so it
 will come soon. Currently it is a template per file approach. Put the content of your template into its own file, somewhere in a search path as specified in
@@ -116,7 +116,7 @@ stache-template-dirs roots.
 
 * Details
 
-There are some things to be aware off: only strings and numbers are insterted directly into the buffer by default. Anything else is ignored. Reason is pragmatic: the most
+There are some things to be aware of: only strings and numbers are insterted directly into the buffer by default. Anything else is ignored. Reason is pragmatic: the most
 often use-case is to actually insert some string into a buffer, say a project name, email address, user name and so on. It might be useful sometimes to do some arithemtic
 on dates or numbers, so to not force every calculation to be wrapped into a defun and format function, I insert numbers by default to.
 
@@ -130,8 +130,6 @@ It is also nice in this case to have logic and iteration in templates which Lisp
 case of file generator. I would like to avoid that, so unlike Mustache, that has different operators including lambdas, and special syntax for them, I just expose entire
 Lisp to a template. Good or bad, I don't know, it was just a pragmatic decision for several reasons for my own convenience.
 
-
-
 Finally, you may end up with some extra whitespace in the generated file you haven't really planned for. For example {{ (require 'some-feature) }} would leave an extra
 new line in generated file. Currently there is built-in way to remove that extra "\n", so you can either load required feature in the code that actually calls any of
 lite expansion functions, or clean eventual unwanted whitespace after you have done the expansion.
@@ -142,12 +140,12 @@ The idea is (hopefully) very simple; we are basically using pair of delimiters t
 that Emacs provides. One important thing to understand here, in my opinon, is that code and markup are two different things. Symbolic expressions are used to represent
 the code. They are very conevient when we transform the code, however, they are not so convenient to transform lots of ordinary text with. The reason is, as mentioned
 previously, the fact that all text has to be passed in as strings, between double-quotes and all formatting has to be escaped with some special characters. For example
-in Emacs Lisp both '%' and '\' are used. It makes it quite tedious to write longer texts in the code.
+in Emacs Lisp both "%" and "\" are used. It makes it quite tedious to write longer texts in the code.
 
 Markup is used to mark a part of text as special in some way for interpretation by some code (interpretter). The fundamental difference between markup and code (sympbolic
 expressions) is that the text in markup is the first class citizen, and code the secondary. Compared to the code, the situation is reversed with markup, we are actually
 escaping code in text. When text is our primary target, it means we don't need to escape stuff in text, at least not as much, as when manipulating string with a
-programming language. That is in way inherent to just Lisp and symbolic expressions. When it comes to programmatically manipulate text, that is same in all traditional
+programming language. That is by no mean inherent to just Lisp and symbolic expressions. When it comes to programmatically manipulating text, that is same in all traditional
 programming languages, C, C++, Java, JavaScript, Python, etc.
  
 * Licence
