@@ -1,0 +1,150 @@
+* About
+
+Lite (LIsp TEmplates), is a simple markup library for programmatic text substitutions in templates, with custmoizable markup syntax.
+
+* Motivation
+
+I wanted a simple placeholder-based markup to generate file content from templates. Emacs has already several templating systems, however they are all more complex than
+what I would like them, and share the very same fundamental problem: they are sexp-based and made with focus on writing Elisp. That means they all require us to
+programmatically stich strings together with string manipulation functions when writing templates. In other words we have to carefully construct strings with concat,
+format & co in order to generate the final result. In my opinion, it tends to be a bit messy business when it comes to longer texts. I wanted something simpler, more akin
+to a markup, similar to for example Yasnippet, but more suited for programmatic expansion from a code generator. My intention from the beginning was to use Yasnippet, but
+is more focused on interactive use, and have lots of stuff that is not needed for automatic expansion, like all the stuff related to cursors. Its API also deos not appear
+as really made to be used as a library and I ended up hacking its internal API more than what I liked.
+
+After testing few ideas with Yasnippet, I decided I need something different, and realized I basically need just placeholders. I remembered Mustache, which is a
+specification for a template engine, however, I just borrowed the markup idea and some very basics: {{ }}. There is an implementation of Mustach for Emacs as well, in
+web-mode, but I wanted something still simpler :-).
+
+Mustach is well designed API and great idea, but it is developed for a different use-case. My use-case is specifically to write some code and file generators with Emacs,
+and Elisp is relatively easy to sort of "export" and embed for that case. I just wanted a way to replace few variables with some values in README files, or in some code
+templates, so I opted for more KISS solution. Basically, Lite templates are just placeholders for Emacs Lisp in any text file. The library will ignore all the text in the
+file, and replace text between a pair of {{ }} (or your choice of delimiters) with results of evaluating that text as a Lisp expression(s). That let us have a markup with
+a power of a full programming language, without having to implement any of the language itself. What I wanted to skip with Mustache, is to introduction of new syntax and
+concepts, at least for people already familiar with Emacs and Emacs Lisp. That also makes implementation almost trivial. Basically it is just a search-and-replace loop
+with few messy details handled for the convenience.
+
+* Instalation
+
+This is not in any or online repositories, so you will have to make lite.el available to your Emacs somehow. Copy it to some directory where Emacs can find it, or
+install with package-vc-install and require in your Emacs before the usage.
+
+* Quick Intro
+
+As an intro into the idea itselsf, let's say we would like to print some value of an Emacs variable in a buffer, for example your user name:
+
+Hello {{ user-login-name }}!
+
+If we evaluate the above template it will print: Hello arthur! (in my case) and it will be inserted into the buffer in which the template was invoked.
+
+Leading and trailing spaces around the code will be trimmed out. I found it a bit dense-looking to write {{user-login-name}}, I like it a bit more
+fluffy with spaces around, so I made it slightly more flexible in that regard. It is possible to execute any number of Lisp expressions in markup. Say you have a
+variable named "greet" pointing to a string:
+
+(defvar greet "World")
+
+This template will expand all three expressions, with spaces between them preserved:
+
+Hello {{ greet "and" user-login-name }}!
+
+That expands to Hello World and Arthur!
+
+The example is contrived, but it ilustrates that we can expand several expressions and literals in one and the same template. They are expanded in a loop, left to
+right, top to bottom.
+
+That was basically what I wanted from a library to auto-generate some files. But there is a bit more to it: since we are basically including Lisp code and evaluating
+symbolic expressions, we are not limited to just print values of variables. We can use any valid Lisp expression in the markup. For example:
+
+ 1 + 2 = {{ (+ 1 2) }}
+
+That will expand to:
+
+1 + 2 = 3
+
+Needles to say, you can call any Lisp program in the markup, entire Lisp files if you want, but typically we would not like to have some very long expressions and
+programs written in between markup handles. If we need to call some longer expression or entire program, it is probably better to wrap it into a function, and call that
+function in the markup.
+
+* Usage
+
+The purpose of this library is to provide an easy to use template syntax to write some file generators. Unlike Yasnippet which focuses on interactive use, Lite focus on
+prgrammatical use. Compared to a built-in template language in Emacs, Skeleton, Lite is much simpler. Lite basically has no syntax at all, it just lets you include any
+Emacs Lisp in your texts. You will typically write some template file, and than use that template to programmatically generate a target file. At least that is the
+intention. The workhorse function is lite-expand-region, which will expand all templates found in a region, in top to bottom, left to right fashion, as they are
+encountered. Eventuall errors are logged to a separate buffer. This not to stop entire processing if a single template fails for whatever reason. This might not be
+desired behaviour, so you can disable it by setting lite-stop-on-errors to nil.
+
+For testing and debugging pruposes there is also an interactive function in DWIM-style which you can use to expand template manually:
+
+    (lite-eval-dwim)
+
+If you put cursor within a templete, it will expand just template. If you put it on a line with a template, it will expand the last template before the line. If you
+mark a region, it will expand all templates in a region, and if you just put it on some line without any templates it will expand all templates in a file. While it was
+somewhat long description, it really is simple in the practice.
+
+The templates are "killed" and not deleted, so they are in the undo history which is very useful while testing.
+
+* Customization
+
+Templates are search in predefined roots. By default it is just one directory, user-emacs-directory/templates, but you can customize this variable to your liking, or just
+let-bind it in your code.
+
+The markers are fully customizable. They are just two strings used for search, so you can customize them for whatever suits your needs, they don't even have to match each
+other.
+
+By default results are filtered, and only strings and numbers are inserted into the buffer, everything else is ignored. You can customize that by providing your own print
+function. The default one uses built-in princ function but it is of course possible to change the default behaviour. It is abstracted in a hook, so you may write your own
+funciton to print stuff out and filter out what you want, or not filter anything if you watn. The hook should take one argument, object to be printed, and will be
+executed in the context of the file in which template expansion is run, narrowed to the region between the delimiters (delimiters not included). Observe that results are
+not "returned", you will have to "insert" or use some of print functions to insert stuff into the current buffer yourself.
+
+* Writing templates
+
+The syntax is very simple, basically write your files as you want them rendered and just enclose Lisp variables and expressions you want evaluated in a pair of {{ }}. It
+is possible to change delimiters as discussed elsewhere, so use it at your discretion.
+
+When it comes to storing the templates into files, it is meant to have two options, but currently only one is implemented. I do plan to make it possible to put several
+templates into a single file, and use that file as a library. For example if I have several different C++ files you would like to generate, I would like to have them in
+one and same "library", where each file content will be delimited by a separator. I have just not yet implemented that one. It is not very difficult to implement, so it
+will come soon. Currently it is a template per file approach. Put the content of your template into its own file, somewhere in a search path as specified in
+stache-template-dirs roots.
+
+* Details
+
+There are some things to be aware off: only strings and numbers are insterted directly into the buffer by default. Anything else is ignored. Reason is pragmatic: the most
+often use-case is to actually insert some string into a buffer, say a project name, email address, user name and so on. It might be useful sometimes to do some arithemtic
+on dates or numbers, so to not force every calculation to be wrapped into a defun and format function, I insert numbers by default to.
+
+By design, every function in Emacs Lisp (and other Lisps) has to return *some* value. Most functions that are meant for side effects only will return nil, some might always
+return t, some will return a symbol and so on. Again, it is useful to be able to execute some lisp for side effects occasionally. For example, if I want to generate some
+code that depends on some functionality from some other Lisp program or a library not loaded in by default, we have to load it into Emacs. In order to not have to write a
+wrapper code for such special cases, it is useful to put a call to require the needed library directly into the template: {{ (require 'some-library ) }}, and not have to
+put it elsewhere. I am not sure if that is super useful yet, but I have a feeling that it makes templates a bit more self-contained.
+
+It is also nice in this case to have logic and iteration in templates which Lisp provides, otherwise it is easy to end up writing a separate program for basically each
+case of file generator. I would like to avoid that, so unlike Mustache, that has different operators including lambdas, and special syntax for them, I just expose entire
+Lisp to a template. Good or bad, I don't know, it was just a pragmatic decision for several reasons for my own convenience.
+
+
+
+Finally, you may end up with some extra whitespace in the generated file you haven't really planned for. For example {{ (require 'some-feature) }} would leave an extra
+new line in generated file. Currently there is built-in way to remove that extra "\n", so you can either load required feature in the code that actually calls any of
+lite expansion functions, or clean eventual unwanted whitespace after you have done the expansion.
+
+* Discussion
+
+The idea is (hopefully) very simple; we are basically using pair of delimiters to mark Lisp code in text files, which we can execute with built-in evaluation functions
+that Emacs provides. One important thing to understand here, in my opinon, is that code and markup are two different things. Symbolic expressions are used to represent
+the code. They are very conevient when we transform the code, however, they are not so convenient to transform lots of ordinary text with. The reason is, as mentioned
+previously, the fact that all text has to be passed in as strings, between double-quotes and all formatting has to be escaped with some special characters. For example
+in Emacs Lisp both '%' and '\' are used. It makes it quite tedious to write longer texts in the code.
+
+Markup is used to mark a part of text as special in some way for interpretation by some code (interpretter). The fundamental difference between markup and code (sympbolic
+expressions) is that the text in markup is the first class citizen, and code the secondary. Compared to the code, the situation is reversed with markup, we are actually
+escaping code in text. When text is our primary target, it means we don't need to escape stuff in text, at least not as much, as when manipulating string with a
+programming language. That is in way inherent to just Lisp and symbolic expressions. When it comes to programmatically manipulate text, that is same in all traditional
+programming languages, C, C++, Java, JavaScript, Python, etc.
+ 
+* Licence
+
+GPL v3. For details, see the attached license file.
