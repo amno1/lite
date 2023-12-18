@@ -2,6 +2,6 @@ This directory contains few simple examples to demonstrate how Lite templates ar
 
 Examples with .txt suffix are small examples to test more or less parsing. simple-elisp-project-readme.org is a small readme file starter/generator to illustrate how Lite template might be used in a README file generator.
 
-For the README example, a proje-name variable has to be defined elsewhere in your code. For example:
+For the README example, the project-name variable has to be defined elsewhere in your code. For example:
 
 (defvar project-name "Your project")
