@@ -55,14 +55,6 @@ snippets."
 (defvar lite-end-regex "}}"
   "End delimiter for a lite template.")
 
-;; (defcustom lite-cache-size 1151
-;;   "Default size for the Lite templace cache."
-;;   :type 'integer)
-
-
-;; (defvar lite-stop-on-error nil
-;;   "Whether to stop on erro in processing or continue.")
-
 (defun lite--default-eval-function (expression)
   "Evaluate EXPRESSION."
   ;;(call-interactively #'eval-last-sexp)
@@ -73,12 +65,12 @@ snippets."
   (when (or (stringp object) (numberp object))
     (princ object (current-buffer))))
 
-(defun lite--default-iterator ()
+(defun lite--default-read ()
   "Move point one expression at a time within a single template."
   (condition-case nil (read (current-buffer)) (error nil)))
 
-(defvar lite-template-iterator #'lite--default-iterator
-  "A hook called to iterate over each expressions in a template.")
+(defvar lite-read-hook #'lite--default-read
+  "A hook called to iterate over each expression in a template.")
 (defvar lite-eval-hook #'lite--default-eval-function
   "A hook called to evaluate a single expression in a template.")
 (defvar lite-print-hook #'lite--default-print-function
@@ -112,7 +104,7 @@ snippets."
             (skip-chars-forward " \n\t\r\v")
             (when (> (point) beg)
               (cl-pushnew (buffer-substring beg (point)) results))
-            (when (setq sxp (funcall lite-template-iterator))
+            (when (setq sxp (funcall lite-read-hook))
               (cl-pushnew (funcall lite-eval-hook sxp) results))))
         (widen)
         (kill-region beg-template end-template)
