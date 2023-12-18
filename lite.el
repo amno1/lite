@@ -130,17 +130,6 @@ snippets."
         (insert-file-contents (car template))
       (error "Can't find template file for: %s" name))))
 
-(defun lite-generate-from-template (template-file &optional target-file)
-  "Generate TARGET-FILE from lite template in TEMPLATE-FILE"
-  (let ((target (or target-file
-                    (expand-file-name (file-name-nondirectory target-file)))))
-    (with-current-buffer (find-file-noselect target)
-      (erase-buffer)
-      (lite-insert-template template-file)
-      (lite-expand-region (point-min) (point-max))
-      (save-buffer)
-      (kill-buffer))))
-
 (defun lite-in-template-p ()
   "Wheter the cursor is in a template."
   (and
@@ -154,6 +143,17 @@ snippets."
     (goto-char (line-end-position))
     (and (re-search-backward lite-begin-regex (line-beginning-position) t)
          (re-search-forward lite-end-regex (line-end-position) t))))
+
+(defun lite-generate-from-template (template-file &optional target-file)
+  "Generate TARGET-FILE from lite template in TEMPLATE-FILE"
+  (let ((target (or target-file
+                    (expand-file-name (file-name-nondirectory target-file)))))
+    (with-current-buffer (find-file-noselect target)
+      (erase-buffer)
+      (lite-insert-template template-file)
+      (lite-expand-region (point-min) (point-max))
+      (save-buffer)
+      (kill-buffer))))
 
 (defun lite-expand-dwim ()
   "Expnad template at point in region, all in a line, or all in the entire
