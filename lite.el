@@ -67,20 +67,84 @@ snippets."
 
 (defun lite--default-read ()
   "Move point one expression at a time within a single template."
-  (condition-case nil (read (current-buffer)) (error nil)))
+  (condition-case nil
+      (let* ((expr (read (current-buffer))) text)
+        (when (symbolp expr)
+          (setq text (symbol-name expr))
+          (cond ((= (aref text 0) ?&)
+                 (setq expr (format "%s" (read (current-buffer)))))
+                ((= (aref text 0) ?!)
+                 (setq expr (if (= 1 (length text))
+                                (format "!%s" (read (current-buffer)))
+                              (format "%s" expr))))
+                (t expr)))
+        expr)
+    (error nil)))
 
-(defvar lite-read-hook #'lite--default-read
+(defvar lite-read-fn #'lite--default-read
   "A hook called to iterate over each expression in a template.")
-(defvar lite-eval-hook #'lite--default-eval-function
+(defvar lite-eval-fn #'lite--default-eval-function
   "A hook called to evaluate a single expression in a template.")
-(defvar lite-print-hook #'lite--default-print-function
+(defvar lite-print-fn #'lite--default-print-function
   "A hook called to print a result of evaluating a single expression.")
 
 (defun lite--search-end ()
   (let ((match
-         (save-excursion
-           (text-property-search-forward 'template-search-end))))
+         (save-excursion (text-property-search-forward 'template-search-end))))
     (when match (prop-match-end match))))
+
+(defun lite--expand-template ()
+  "Expand a single template with borders at BEG and END."
+  (let* ((beg-code (point))
+         (beg-template (- (point) (length lite-begin-regex)))
+         (end-template (re-search-forward lite-end-regex (lite--search-end)))
+         (end-code (- end-template (length lite-end-regex)))
+         results)
+    (narrow-to-region beg-code end-code)
+    (goto-char (point-min))
+    (when lite-ignore-trailing-spaces
+      (skip-chars-forward " \n\t\r\v"))
+    (while (not (eobp))
+      (let ((beg (point)) sxp)
+        (skip-chars-forward " \n\t\r\v")
+        (when (> (point) beg)
+          (cl-pushnew (buffer-substring beg (point)) results))
+        (when (setq sxp (funcall lite-read-fn))
+          (cl-pushnew (funcall lite-eval-fn sxp) results))))
+    (widen)
+    (kill-region beg-template end-template)
+    (dolist (result (nreverse results))
+      (funcall lite-print-fn result))
+    (when lite-ignore-trailing-spaces
+      (let ((beg (point)))
+        (skip-chars-backward " \n\t\r\v")
+        (kill-region (point) beg)))))
+
+(defun lite--template-at-point ()
+  "Return the template at point."
+  (save-excursion
+    (re-search-backward lite-begin-regex)
+    (let ((beg (point))
+          (end (save-excursion (re-search-forward lite-end-regex)))
+          content)
+      (forward-char (length lite-begin-regex))
+      (when (or (= (char-after) ?!) (= (char-after) ?@) (= (char-after) ?&))
+        (forward-char))
+      (setq content
+            (buffer-substring-no-properties
+             (point) (save-excursion
+                       (- (re-search-forward lite-end-regex)
+                          (length lite-end-regex)))))
+      (pcase (char-before)
+        (?! (list beg end ""))
+        (?@ (list beg end content))
+        (?& (list beg end (concat lite-begin-regex content lite-end-regex)))))))
+
+(defun lite--insert-self ()
+  "Insert template at point without self-referencing character."
+  (let ((tmp (lite--template-at-point)))
+    (kill-region (car tmp) (cadr tmp))
+    (funcall lite-print-fn (caddr tmp))))
 
 (defun lite-expand-region (search-start search-end)
   "Expand all templates in current buffer."
@@ -90,30 +154,11 @@ snippets."
     (when (= search-end (point-max)) (cl-decf search-end))
     (put-text-property search-end (1+ search-end) 'template-search-end t)
     (while (re-search-forward lite-begin-regex (lite--search-end) t)
-      (let* ((beg-code (point))
-             (beg-template (- (point) (length lite-begin-regex)))
-             (end-template (re-search-forward lite-end-regex (lite--search-end)))
-             (end-code (- end-template (length lite-end-regex)))
-             results)
-        (narrow-to-region beg-code end-code)
-        (goto-char (point-min))
-        (when lite-ignore-trailing-spaces
-          (skip-chars-forward " \n\t\r\v"))
-        (while (not (eobp))
-          (let ((beg (point)) sxp)
-            (skip-chars-forward " \n\t\r\v")
-            (when (> (point) beg)
-              (cl-pushnew (buffer-substring beg (point)) results))
-            (when (setq sxp (funcall lite-read-hook))
-              (cl-pushnew (funcall lite-eval-hook sxp) results))))
-        (widen)
-        (kill-region beg-template end-template)
-        (dolist (result (nreverse results))
-          (funcall lite-print-hook result))
-        (when lite-ignore-trailing-spaces
-          (let ((beg (point)))
-            (skip-chars-backward " \n\t\r\v")
-            (kill-region (point) beg)))))
+      (pcase (char-after)
+        (?! (lite--insert-self))
+        (?& (lite--insert-self))
+        (?@ (lite--insert-self))
+        (_  (lite--expand-template))))
     (goto-char (point-min))
     (remove-text-properties (point-min) (point-max) '(template-search-end))))
 
@@ -133,8 +178,8 @@ snippets."
 (defun lite-in-template-p ()
   "Wheter the cursor is in a template."
   (and
-   (save-excursion (re-search-backward lite-begin-regex
-                                       (line-beginning-position) t))
+   (save-excursion
+     (re-search-backward lite-begin-regex (line-beginning-position) t))
    (save-excursion (re-search-forward lite-end-regex (line-end-position) t))))
 
 (defun lite-template-in-line-p ()
