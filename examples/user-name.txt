@@ -1,5 +1,3 @@
 Just a very simple example to demonstrate text substitution and multiple substitutions.
 
-You are {{user-full-name}} logged in as: {{ user-login-name }}.
-
-You are {{user-full-name "logged in as:" user-login-name}}.
+You are %%user-full-name logged in as: %%user-login-name.

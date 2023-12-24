@@ -1,5 +1,0 @@
-{{! This is ignored. }}
-{{& The template itself is inserted without evaluation. }}
-{{@ The contet of the template is inserted without evaluation. }}
-{{ &(+ 1 2) !2 3 }}
-
