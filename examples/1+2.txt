@@ -1,7 +1,7 @@
 Few simple lines just to test syntax parsing in regard to spaces templates next to each other etc.
 
-1 + 2 = 3
-1 + 2 = 3
-[45 6 7]
-1 + 2 = 
-1 + 2 = %%escaped
+1 + 2 = %%3
+1 + 2 = %%(+ 1 2)
+[%%4%%5 %%6 %%(+ 1 6)]
+1 + 2 = %%nil
+1 + 2 = %%!escaped
