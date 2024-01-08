@@ -116,7 +116,7 @@ snippets."
   "Whether there is at least one template in a line."
   (save-excursion
     (goto-char (line-end-position))
-    (re-search-backward "%%" (line-beginning-position) t)))
+    (re-search-backward lite-marker-regex (line-beginning-position) t)))
 
 (defun lite-expand-dwim ()
   "Expnad template at point in region, all in a line, or all in a buffer."
