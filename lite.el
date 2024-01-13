@@ -2,8 +2,11 @@
 
 ;; Copyright (C) 2023  Arthur Miller
 
-;; Author: Arthur Miller <arthur.miller@live.com>
-;; Keywords: 
+;; Author: Arthur Miller
+;; Version: 0.5.0
+;; Keywords: tools programming lisp
+;; Package-Requires: ((emacs "27.1"))
+;; URL: https://github.com/amno1/lite
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
