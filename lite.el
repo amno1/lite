@@ -109,10 +109,13 @@ snippets."
   (let ((auto-insert-mode nil)
         (target (or target-file
                     (expand-file-name (file-name-nondirectory target-file)))))
-    (with-temp-file target
-      (erase-buffer)
+    (unless (file-exists-p target)
+      (make-empty-file target t))
+    (with-temp-buffer
+      (setq buffer-file-name target)
       (lite-insert-template template-file)
-      (lite-expand-region (point-min) (point-max)))))
+      (lite-expand-region (point-min) (point-max))
+      (write-region (point-min) (point-max) target))))
 
 (defun lite-template-in-line-p ()
   "Whether there is at least one template in a line."
