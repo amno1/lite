@@ -106,14 +106,13 @@ snippets."
 
 (defun lite-generate-from-template (template-file &optional target-file)
   "Generate TARGET-FILE from lite template in TEMPLATE-FILE"
-  (let ((target (or target-file
+  (let ((auto-insert-mode nil)
+        (target (or target-file
                     (expand-file-name (file-name-nondirectory target-file)))))
-    (with-current-buffer (find-file-noselect target)
+    (with-temp-file target
       (erase-buffer)
       (lite-insert-template template-file)
-      (lite-expand-region (point-min) (point-max))
-      (save-buffer)
-      (kill-buffer))))
+      (lite-expand-region (point-min) (point-max)))))
 
 (defun lite-template-in-line-p ()
   "Whether there is at least one template in a line."
