@@ -112,11 +112,10 @@ snippets."
     (unless (file-exists-p (file-name-directory target))
       (make-directory (file-name-directory target) t))
     (with-temp-buffer
-      (with-silent-modifications
-        (lite-insert-template template-file)
-        (setq buffer-file-name target)
-        (lite-expand-region (point-min) (point-max))
-        (save-buffer)))))
+      (lite-insert-template template-file)
+      (setq buffer-file-name target)
+      (lite-expand-region (point-min) (point-max))
+      (save-buffer))))
 
 (defun lite-template-in-line-p ()
   "Whether there is at least one template in a line."
